@@ -27,6 +27,7 @@ public final class MapMakerConfig {
     public int mapsW = 1, mapsH = 1;
     public boolean staircase = false;
     public boolean dither = true;
+    public boolean split = true; // multi-map images are saved as one file per 128x128 map
     public String fit = "CROP"; // CROP, FIT, STRETCH
 
     // block types

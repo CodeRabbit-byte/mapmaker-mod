@@ -60,7 +60,7 @@ public class MapMakerScreen extends Screen {
 
     @Override
     protected void init() {
-        top = Math.max(18, (height - 232) / 2);
+        top = Math.max(18, (height - 254) / 2);
         int x = width - COL_W - 12;
         int half = (COL_W - 4) / 2;
         int y = top;
@@ -113,6 +113,14 @@ public class MapMakerScreen extends Screen {
         addDrawableChild(btn(toggle("Leaves", cfg.leaves), x, y, half, b -> { cfg.leaves = !cfg.leaves; changed(); }));
         addDrawableChild(btn(Text.literal("Blocks..."), x + half + 4, y, half,
                 b -> client.setScreen(new BlocksScreen(this))));
+        y += row;
+
+        int tiles = cfg.mapsW * cfg.mapsH;
+        addDrawableChild(btn(toggle("Split", cfg.split), x, y, half, b -> { cfg.split = !cfg.split; changed(); }));
+        ButtonWidget info = btn(Text.literal(tiles == 1 ? "1 file" : (cfg.split ? tiles + " files" : "1 big file")),
+                x + half + 4, y, half, b -> {});
+        info.active = false;
+        addDrawableChild(info);
         y += row;
 
         addDrawableChild(btn(Text.literal(listeningKey ? "Press a key..." : "Key: " + keyName(cfg.key)), x, y, half, b -> {
@@ -355,13 +363,13 @@ public class MapMakerScreen extends Screen {
         }
         final String name = sanitize(cfg.name);
         setStatus("Saving...", false);
+        final boolean split = cfg.split;
         POOL.submit(() -> {
             try {
-                Path dir = schematicsDir();
-                Files.createDirectories(dir);
-                int[] counts = MapSchematic.write(r, cfg.supportState(), dir.resolve(name + ".nbt"));
-                setStatus("Saved " + name + ".nbt (" + r.w() + "x" + r.h() + (r.stairs() ? " staircase" : " flat") + ") "
-                        + String.format("%,d", counts[0]) + " blocks, " + counts[1] + " kinds - open it in Litematica", false);
+                int[] c = MapSchematic.writeAll(r, cfg.supportState(), schematicsDir(), name, split);
+                String what = c[2] == 1 ? name + ".nbt" : c[2] + " files (" + name + "_r1_c1.nbt ...)";
+                setStatus("Saved " + what + " (" + r.w() + "x" + r.h() + (r.stairs() ? " staircase" : " flat") + ") "
+                        + String.format("%,d", c[0]) + " blocks, up to " + c[1] + " kinds per map - open in Litematica", false);
             } catch (Throwable e) {
                 setStatus("Save failed: " + e, true);
             }
@@ -408,6 +416,20 @@ public class MapMakerScreen extends Screen {
                         ctx.fill(ox + (int) (start * sc), y1, ox + (int) (cx * sc), y2, pv[cy * cw + start]);
                         start = cx;
                     }
+                }
+            }
+            // show where the 128x128 maps will be cut
+            MapConverter.Result res = result;
+            if (cfg.split && res != null && (res.w() > 128 || res.h() > 128)) {
+                int tx = res.w() / 128, ty = res.h() / 128;
+                int right = ox + (int) (cw * sc), bottom = oy + (int) (ch * sc);
+                for (int i = 1; i < tx; i++) {
+                    int gx = ox + (int) (cw * sc * i / tx);
+                    ctx.fill(gx, oy, gx + 1, bottom, 0xAAFFFFFF);
+                }
+                for (int j = 1; j < ty; j++) {
+                    int gy = oy + (int) (ch * sc * j / ty);
+                    ctx.fill(ox, gy, right, gy + 1, 0xAAFFFFFF);
                 }
             }
         } else {
