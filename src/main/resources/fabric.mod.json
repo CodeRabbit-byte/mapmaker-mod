@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "mapmaker",
+  "version": "${version}",
+  "name": "MapMaker",
+  "description": "Turn any image into map art. Full blocks, carpet, candles, resin clumps or leaf litter. Saves a .nbt for Litematica.",
+  "authors": ["you"],
+  "environment": "client",
+  "entrypoints": { "client": ["dev.mapmaker.MapMakerClient"] },
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}
